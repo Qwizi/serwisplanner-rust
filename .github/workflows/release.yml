@@ -34,6 +34,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
       - name: Compute and set CalVer in Cargo.toml
         id: version
         shell: bash
@@ -59,6 +62,7 @@ jobs:
 
           NEW_VERSION="${CALVER_PREFIX}.${NEXT_BUILD}"
           sed -i "0,/^version = \".*\"/s//version = \"${NEW_VERSION}\"/" Cargo.toml
+          cargo generate-lockfile
 
           TAG="v${NEW_VERSION}"
 
