@@ -25,6 +25,11 @@ RUST_RESERVED = {
     "async", "await", "move", "in", "as", "impl", "trait", "dyn",
 }
 
+# Global: all schemas (set in main)
+ALL_SCHEMAS: dict = {}
+# Track which relation structs we need to generate per module
+RELATION_STRUCTS: dict = {}  # {module_resource: [(struct_name, schema_name)]}
+
 
 def snake_case(name: str) -> str:
     s = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", name)
@@ -32,54 +37,73 @@ def snake_case(name: str) -> str:
     return s.lower()
 
 
-def to_rust_type(prop: dict, nullable: bool) -> str:
+def ref_to_schema_name(ref: str) -> str:
+    """Extract schema name from $ref like '#/components/schemas/FooBar'"""
+    return ref.rsplit("/", 1)[-1]
+
+
+def ref_to_struct_name(ref: str) -> str:
+    """Convert $ref to a Rust struct name."""
+    schema_name = ref_to_schema_name(ref)
+    # e.g. AccountUserGETFieldsForRelation -> AccountUserRelation
+    name = schema_name.replace("GETFieldsForRelation", "Rel")
+    name = name.replace("GETFields", "")
+    return name
+
+
+def resolve_ref_props(ref: str) -> dict:
+    """Resolve $ref to its properties."""
+    schema_name = ref_to_schema_name(ref)
+    schema = ALL_SCHEMAS.get(schema_name, {})
+    return get_schema_props(schema)
+
+
+def to_rust_type(prop: dict, module_resource: str | None = None) -> str:
+    """Map OpenAPI property to Rust type. Tracks relation structs needed."""
     ptype = prop.get("type", "")
-    fmt = prop.get("format", "")
     ref_ = prop.get("$ref", "")
     items = prop.get("items", {})
+    all_of = prop.get("allOf", [])
 
+    # Direct $ref
     if ref_:
-        base = "serde_json::Value"
-    elif ptype == "integer":
-        base = "i64"
+        rel_props = resolve_ref_props(ref_)
+        if not rel_props:
+            return "serde_json::Value"
+        struct_name = ref_to_struct_name(ref_)
+        if module_resource:
+            RELATION_STRUCTS.setdefault(module_resource, set()).add(
+                (struct_name, ref_to_schema_name(ref_))
+            )
+        return struct_name
+
+    # allOf with $ref (relation fields)
+    if all_of:
+        for item in all_of:
+            if isinstance(item, dict) and "$ref" in item:
+                return to_rust_type(item, module_resource)
+        return "serde_json::Value"
+
+    if ptype == "integer":
+        return "i64"
     elif ptype == "number":
-        base = "f64"
+        return "f64"
     elif ptype == "boolean":
-        base = "bool"
+        return "bool"
     elif ptype == "string":
-        base = "String"
+        return "String"
     elif ptype == "array":
-        inner = to_rust_type(items, False) if items else "serde_json::Value"
-        base = f"Vec<{inner}>"
+        if items:
+            # Handle anyOf in items (attribute types etc.)
+            if "anyOf" in items or "oneOf" in items:
+                return "Vec<serde_json::Value>"
+            inner = to_rust_type(items, module_resource)
+            return f"Vec<{inner}>"
+        return "Vec<serde_json::Value>"
     elif ptype == "object":
-        base = "serde_json::Value"
+        return "serde_json::Value"
     else:
-        base = "serde_json::Value"
-
-    return f"Option<{base}>" if nullable else base
-
-
-def generate_struct(name: str, props: dict) -> str:
-    lines = [
-        "#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]",
-        "#[serde(default, rename_all = \"camelCase\")]",
-        f"pub struct {name} {{",
-    ]
-    for pname, pdef in sorted(props.items()):
-        nullable = pdef.get("nullable", False)
-        rust_type = to_rust_type(pdef, nullable)
-        rust_field = snake_case(pname)
-
-        if rust_field in RUST_RESERVED:
-            lines.append(f"    #[serde(rename = \"{pname}\")]")
-            rust_field = f"r#{rust_field}"
-
-        if nullable and "Option" not in rust_type:
-            rust_type = f"Option<{rust_type}>"
-        lines.append(f"    pub {rust_field}: {rust_type},")
-
-    lines.append("}")
-    return "\n".join(lines)
+        return "serde_json::Value"
 
 
 def get_schema_props(schema: dict) -> dict:
@@ -91,13 +115,32 @@ def get_schema_props(schema: dict) -> dict:
     return props
 
 
+def generate_struct(name: str, props: dict, module_resource: str | None = None) -> str:
+    lines = [
+        "#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]",
+        "#[serde(default, rename_all = \"camelCase\")]",
+        f"pub struct {name} {{",
+    ]
+    for pname, pdef in sorted(props.items()):
+        rust_type = to_rust_type(pdef, module_resource)
+        rust_field = snake_case(pname)
+
+        if rust_field in RUST_RESERVED:
+            lines.append(f"    #[serde(rename = \"{pname}\")]")
+            rust_field = f"r#{rust_field}"
+
+        if not rust_type.startswith("Option<"):
+            rust_type = f"Option<{rust_type}>"
+        lines.append(f"    pub {rust_field}: {rust_type},")
+
+    lines.append("}")
+    return "\n".join(lines)
+
+
 def pluralize(word: str) -> list[str]:
-    """Return possible plural forms of a snake_case word."""
     forms = [word + "s"]
     if word.endswith("y"):
-        # company -> companies, history -> histories, category -> categories
         forms.append(word[:-1] + "ies")
-        # API typo: holiday -> holidaies
         forms.append(word[:-1] + "aies")
     if word.endswith("s") or word.endswith("x") or word.endswith("sh"):
         forms.append(word + "es")
@@ -128,10 +171,10 @@ def generate_module_file(
     resource: str,
     props: dict,
     api_path: str | None,
-    is_deprecated: bool,
 ) -> str:
-    """Generate a complete module file with type + resource accessor."""
     mod_name = snake_case(resource)
+    RELATION_STRUCTS.pop(resource, None)  # Reset for this module
+
     lines = [
         f"//! Auto-generated module for `{resource}`.",
         "//!",
@@ -139,7 +182,7 @@ def generate_module_file(
         "",
     ]
 
-    if api_path and not is_deprecated:
+    if api_path:
         lines.extend([
             "use std::sync::Arc;",
             "use serde_json::Value;",
@@ -150,29 +193,36 @@ def generate_module_file(
             "",
         ])
 
-    # --- Type ---
-    depr_attr = '#[deprecated(note = "This API resource is deprecated")]\n' if is_deprecated else ""
-
-    lines.append(f"""{depr_attr}{generate_struct(resource, props)}""")
+    # Main struct
+    lines.append(generate_struct(resource, props, resource))
     lines.append("")
 
+    # Generate relation structs needed by this module
+    if resource in RELATION_STRUCTS:
+        for struct_name, schema_name in sorted(RELATION_STRUCTS[resource]):
+            rel_props = resolve_ref_props(f"#/components/schemas/{schema_name}")
+            if rel_props:
+                # Don't recurse into relations of relations (use Value)
+                lines.append(generate_struct(struct_name, rel_props, None))
+                lines.append("")
+
     # ListResponse
-    lines.append(f"""{depr_attr}#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+    lines.append(f"""#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct {resource}ListResponse {{
     pub data: Vec<{resource}>,
     pub meta: Option<super::ListMeta>,
 }}""")
     lines.append("")
 
-    # --- Resource accessor (only for active with known path) ---
-    if api_path and not is_deprecated:
-        struct_name = f"{resource}Resource"
+    # Resource accessor
+    if api_path:
         lines.append(f"""/// Resource accessor for `{api_path}`.
-pub struct {struct_name} {{
+pub struct {resource}Resource {{
     resource: Resource,
 }}
 
-impl {struct_name} {{
+impl {resource}Resource {{
     pub(crate) fn new(inner: Arc<ClientInner>) -> Self {{
         Self {{
             resource: Resource::new(inner, "{api_path}"),
@@ -188,25 +238,29 @@ impl {struct_name} {{
     /// Retrieve a single resource by ID.
     pub async fn retrieve(&self, id: u64, params: Option<&QueryParams>) -> Result<{resource}> {{
         let value = self.resource.retrieve(id, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }}
 
     /// Create a new resource.
     pub async fn create(&self, data: &Value, params: Option<&QueryParams>) -> Result<{resource}> {{
         let value = self.resource.create(data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }}
 
     /// Update a resource.
     pub async fn update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<{resource}> {{
         let value = self.resource.update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }}
 
     /// Partial update a resource.
     pub async fn partial_update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<{resource}> {{
         let value = self.resource.partial_update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }}
 
     /// Delete a resource.
@@ -242,6 +296,8 @@ impl {struct_name} {{
 
 
 def main():
+    global ALL_SCHEMAS
+
     if len(sys.argv) < 2:
         print("Usage: codegen.py <path-to-yaml>")
         sys.exit(1)
@@ -249,10 +305,10 @@ def main():
     with open(sys.argv[1]) as f:
         spec = yaml.safe_load(f)
 
-    schemas = spec.get("components", {}).get("schemas", {})
+    ALL_SCHEMAS = spec.get("components", {}).get("schemas", {})
     api_paths = spec.get("paths", {})
 
-    # Find deprecated resources
+    # Deprecated
     deprecated_tags = set()
     for path, methods in api_paths.items():
         for method, details in methods.items():
@@ -260,9 +316,9 @@ def main():
                 for tag in details.get("tags", []):
                     deprecated_tags.add(tag)
 
-    # Collect active resources only (skip deprecated)
-    all_resources = {}  # {name: (props, is_deprecated)}
-    for schema_name, schema in schemas.items():
+    # Active resources
+    all_resources = {}
+    for schema_name, schema in ALL_SCHEMAS.items():
         if not schema_name.endswith("GETFields"):
             continue
         if "ForCollection" in schema_name or "ForRelation" in schema_name:
@@ -272,26 +328,26 @@ def main():
             continue
         props = get_schema_props(schema)
         if props:
-            all_resources[resource] = (props, False)
+            all_resources[resource] = props
 
-    # Clean and recreate generated dir
+    # Clean generated dir
     if GEN_DIR.exists():
         shutil.rmtree(GEN_DIR)
     GEN_DIR.mkdir(parents=True)
 
     # Generate per-module files
-    mod_names = []  # (mod_name, resource, is_deprecated, has_resource)
+    mod_names = []
     for resource in sorted(all_resources.keys()):
-        props, is_deprecated = all_resources[resource]
+        props = all_resources[resource]
         api_path = find_api_path(resource, api_paths)
-        has_resource = api_path is not None and not is_deprecated
+        has_resource = api_path is not None
 
         mod_name = snake_case(resource)
-        content = generate_module_file(resource, props, api_path, is_deprecated)
+        content = generate_module_file(resource, props, api_path)
 
         file_path = GEN_DIR / f"{mod_name}.rs"
         file_path.write_text(content)
-        mod_names.append((mod_name, resource, is_deprecated, has_resource, api_path))
+        mod_names.append((mod_name, resource, has_resource, api_path))
 
     # Generate mod.rs
     mod_lines = [
@@ -299,10 +355,9 @@ def main():
         "//!",
         "//! Do not edit manually. Regenerate with: `python3 codegen.py <yaml>`",
         "",
-        "#![allow(deprecated)]",
-        "",
         "/// Pagination metadata returned in list responses.",
-        "#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]",
+        "#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]",
+        "#[serde(default)]",
         "pub struct ListMeta {",
         "    pub total: Option<i64>,",
         "    pub limit: Option<i64>,",
@@ -311,13 +366,12 @@ def main():
         "",
     ]
 
-    for mod_name, resource, is_deprecated, has_resource, _ in mod_names:
+    for mod_name, resource, has_resource, _ in mod_names:
         mod_lines.append(f"pub mod {mod_name};")
 
     mod_lines.append("")
 
-    # Re-exports
-    for mod_name, resource, is_deprecated, has_resource, _ in mod_names:
+    for mod_name, resource, has_resource, _ in mod_names:
         mod_lines.append(f"pub use {mod_name}::{{{resource}, {resource}ListResponse}};")
         if has_resource:
             mod_lines.append(f"pub use {mod_name}::{resource}Resource;")
@@ -325,23 +379,15 @@ def main():
     mod_path = GEN_DIR / "mod.rs"
     mod_path.write_text("\n".join(mod_lines) + "\n")
 
-    # Stats
-    active_count = sum(1 for _, _, d, _, _ in mod_names if not d)
-    deprecated_count = sum(1 for _, _, d, _, _ in mod_names if d)
-    resource_count = sum(1 for _, _, _, h, _ in mod_names if h)
-
-    print(f"Generated {len(mod_names)} modules in {GEN_DIR}/")
-    print(f"  {active_count} active types, {deprecated_count} deprecated types")
-    print(f"  {resource_count} typed resource accessors")
-
-    # Generate _generated_accessors.rs (included by client.rs)
+    # Generate _generated_accessors.rs
     acc_lines = [
         "// Auto-generated resource accessor methods.",
         "// Do not edit manually. Regenerate with: python3 codegen.py <yaml>",
         "",
         "impl SerwisPlanner {",
     ]
-    for mod_name, resource, is_deprecated, has_resource, api_path in mod_names:
+    accessor_count = 0
+    for mod_name, resource, has_resource, api_path in mod_names:
         if not has_resource:
             continue
         acc_lines.append(f"    /// `{api_path}`")
@@ -349,11 +395,19 @@ def main():
         acc_lines.append(f"        crate::generated::{resource}Resource::new(self.inner.clone())")
         acc_lines.append(f"    }}")
         acc_lines.append("")
+        accessor_count += 1
     acc_lines.append("}")
 
     acc_path = SRC / "_generated_accessors.rs"
     acc_path.write_text("\n".join(acc_lines) + "\n")
-    print(f"Generated {acc_path} ({sum(1 for _, _, _, h, _ in mod_names if h)} accessors)")
+
+    # Stats
+    active_count = len(all_resources)
+    rel_count = sum(len(v) for v in RELATION_STRUCTS.values())
+    print(f"Generated {len(mod_names)} modules in {GEN_DIR}/")
+    print(f"  {active_count} types + {rel_count} relation types")
+    print(f"  {accessor_count} resource accessors")
+    print(f"Generated {acc_path}")
 
 
 if __name__ == "__main__":

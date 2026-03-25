@@ -15,16 +15,17 @@ pub struct PriceTypes {
     pub active: Option<bool>,
     pub currency: Option<String>,
     pub full_name: Option<String>,
-    pub id: i64,
+    pub id: Option<i64>,
     pub import_id: Option<String>,
     pub import_type: Option<String>,
-    pub index: String,
-    pub index_upper: String,
+    pub index: Option<String>,
+    pub index_upper: Option<String>,
     pub precision: Option<i64>,
     pub short_name: Option<String>,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct PriceTypesListResponse {
     pub data: Vec<PriceTypes>,
     pub meta: Option<super::ListMeta>,
@@ -51,25 +52,29 @@ impl PriceTypesResource {
     /// Retrieve a single resource by ID.
     pub async fn retrieve(&self, id: u64, params: Option<&QueryParams>) -> Result<PriceTypes> {
         let value = self.resource.retrieve(id, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Create a new resource.
     pub async fn create(&self, data: &Value, params: Option<&QueryParams>) -> Result<PriceTypes> {
         let value = self.resource.create(data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Update a resource.
     pub async fn update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<PriceTypes> {
         let value = self.resource.update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Partial update a resource.
     pub async fn partial_update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<PriceTypes> {
         let value = self.resource.partial_update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Delete a resource.

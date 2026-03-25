@@ -25,9 +25,9 @@ pub struct Product {
     pub c_price_brutto: Option<f64>,
     pub c_price_netto: Option<f64>,
     pub c_vat_value: Option<f64>,
-    pub category: Option<serde_json::Value>,
+    pub category: Option<ProductCategoryRel>,
     pub code: Option<String>,
-    pub company_prices: serde_json::Value,
+    pub company_prices: Option<ProductCompanyPriceRel>,
     pub d_currency_code: Option<String>,
     pub d_price_brutto: Option<f64>,
     pub d_price_netto: Option<f64>,
@@ -40,8 +40,8 @@ pub struct Product {
     pub e_vat_value: Option<f64>,
     pub ean: Option<String>,
     pub estimated_quantity: Option<String>,
-    pub external_marker: Option<serde_json::Value>,
-    pub external_markers: Option<serde_json::Value>,
+    pub external_marker: Option<ExternalMarkerRel>,
+    pub external_markers: Option<ExternalMarkerRel>,
     pub f_currency_code: Option<String>,
     pub f_price_brutto: Option<f64>,
     pub f_price_netto: Option<f64>,
@@ -54,30 +54,129 @@ pub struct Product {
     pub h_price_brutto: Option<f64>,
     pub h_price_netto: Option<f64>,
     pub h_vat_value: Option<f64>,
-    pub i18ns: serde_json::Value,
-    pub id: i64,
+    pub i18ns: Option<ProductI18nRel>,
+    pub id: Option<i64>,
     pub import_code: Option<String>,
     pub import_id: Option<i64>,
     pub import_typ: Option<String>,
     pub is_complete: Option<bool>,
     pub is_main_product: Option<bool>,
     pub is_service: Option<bool>,
-    pub measure_unit: Option<serde_json::Value>,
+    pub measure_unit: Option<MeasureUnitRel>,
     pub modification_date: Option<String>,
     pub name: Option<String>,
-    pub price_individuals: serde_json::Value,
-    pub product_group: Option<serde_json::Value>,
+    pub price_individuals: Option<PriceIndividualRel>,
+    pub product_group: Option<PriceProductGroupRel>,
     pub quantity: Option<f64>,
     pub quantity_precision: Option<i64>,
     pub quantity_raw: Option<f64>,
     pub quantity_reserved: Option<f64>,
     pub srp_price_type: Option<String>,
-    pub translation_i18ns: serde_json::Value,
-    pub vat: Option<serde_json::Value>,
+    pub translation_i18ns: Option<ProductI18nRel>,
+    pub vat: Option<VatRel>,
     pub vat_value: Option<f64>,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct ExternalMarkerRel {
+    pub id: Option<i64>,
+    pub is_active: Option<bool>,
+    pub is_promoted: Option<bool>,
+    pub label: Option<String>,
+    pub symbol: Option<String>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct MeasureUnitRel {
+    pub import_code: Option<String>,
+    pub import_id: Option<i64>,
+    pub import_typ: Option<String>,
+    pub measure_unit_id: Option<i64>,
+    pub name: Option<String>,
+    pub short_name: Option<String>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct PriceIndividualRel {
+    pub company: Option<serde_json::Value>,
+    pub currency_code: Option<String>,
+    pub id: Option<String>,
+    pub name: Option<String>,
+    pub price_netto: Option<f64>,
+    pub priority: Option<i64>,
+    pub product: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct PriceProductGroupRel {
+    pub description: Option<String>,
+    pub id: Option<i64>,
+    pub import_code: Option<String>,
+    pub import_id: Option<i64>,
+    pub import_typ: Option<String>,
+    pub name: Option<String>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct ProductCategoryRel {
+    pub i18ns: Option<serde_json::Value>,
+    pub id: Option<i64>,
+    pub import_code: Option<String>,
+    pub import_id: Option<i64>,
+    pub import_typ: Option<String>,
+    pub name: Option<String>,
+    pub ordering: Option<i64>,
+    pub parent: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct ProductCompanyPriceRel {
+    pub base_price_brutto: Option<f64>,
+    pub base_price_netto: Option<f64>,
+    pub company: Option<serde_json::Value>,
+    pub company_currency_code: Option<String>,
+    pub company_price_brutto: Option<f64>,
+    pub company_price_netto: Option<f64>,
+    pub discount: Option<serde_json::Value>,
+    pub discount_percentage: Option<f64>,
+    pub id: Option<String>,
+    pub product: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct ProductI18nRel {
+    pub code: Option<String>,
+    pub description: Option<String>,
+    pub id: Option<i64>,
+    pub import_code: Option<String>,
+    pub import_id: Option<i64>,
+    pub import_typ: Option<String>,
+    pub language: Option<String>,
+    pub name: Option<String>,
+    pub product: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct VatRel {
+    pub id: Option<i64>,
+    pub import_code: Option<String>,
+    pub import_id: Option<i64>,
+    pub import_typ: Option<String>,
+    pub vat_description: Option<String>,
+    pub vat_name: Option<String>,
+    pub vat_value: Option<f64>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct ProductListResponse {
     pub data: Vec<Product>,
     pub meta: Option<super::ListMeta>,
@@ -104,25 +203,29 @@ impl ProductResource {
     /// Retrieve a single resource by ID.
     pub async fn retrieve(&self, id: u64, params: Option<&QueryParams>) -> Result<Product> {
         let value = self.resource.retrieve(id, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Create a new resource.
     pub async fn create(&self, data: &Value, params: Option<&QueryParams>) -> Result<Product> {
         let value = self.resource.create(data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Update a resource.
     pub async fn update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<Product> {
         let value = self.resource.update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Partial update a resource.
     pub async fn partial_update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<Product> {
         let value = self.resource.partial_update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Delete a resource.

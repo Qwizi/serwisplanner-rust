@@ -12,14 +12,15 @@ use crate::resources::base::Resource;
 #[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct ExternalMarker {
-    pub id: i64,
-    pub is_active: bool,
-    pub is_promoted: bool,
-    pub label: String,
-    pub symbol: String,
+    pub id: Option<i64>,
+    pub is_active: Option<bool>,
+    pub is_promoted: Option<bool>,
+    pub label: Option<String>,
+    pub symbol: Option<String>,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct ExternalMarkerListResponse {
     pub data: Vec<ExternalMarker>,
     pub meta: Option<super::ListMeta>,
@@ -46,25 +47,29 @@ impl ExternalMarkerResource {
     /// Retrieve a single resource by ID.
     pub async fn retrieve(&self, id: u64, params: Option<&QueryParams>) -> Result<ExternalMarker> {
         let value = self.resource.retrieve(id, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Create a new resource.
     pub async fn create(&self, data: &Value, params: Option<&QueryParams>) -> Result<ExternalMarker> {
         let value = self.resource.create(data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Update a resource.
     pub async fn update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<ExternalMarker> {
         let value = self.resource.update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Partial update a resource.
     pub async fn partial_update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<ExternalMarker> {
         let value = self.resource.partial_update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Delete a resource.

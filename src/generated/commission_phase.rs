@@ -13,18 +13,49 @@ use crate::resources::base::Resource;
 #[serde(default, rename_all = "camelCase")]
 pub struct CommissionPhase {
     pub color: Option<String>,
-    pub commission_phase_id: i64,
+    pub commission_phase_id: Option<i64>,
     pub document_series_definition: Option<String>,
     pub is_first_phase: Option<bool>,
-    pub kanban_columns: serde_json::Value,
-    pub phase_name: String,
+    pub kanban_columns: Option<KanbanColumnRel>,
+    pub phase_name: Option<String>,
     pub product_required: Option<i64>,
     pub serial_code_required: Option<i64>,
     pub stage: Option<i64>,
-    pub task_type: Option<serde_json::Value>,
+    pub task_type: Option<TaskTypeRel>,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct KanbanColumnRel {
+    pub commission_phases: Option<serde_json::Value>,
+    pub id: Option<i64>,
+    pub kanban: Option<serde_json::Value>,
+    pub name: Option<String>,
+    pub sequence: Option<i64>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct TaskTypeRel {
+    pub default_event_date: Option<i64>,
+    pub default_planned_date: Option<i64>,
+    pub icon: Option<String>,
+    pub icon_color: Option<String>,
+    pub id: Option<i64>,
+    pub is_automatic: Option<bool>,
+    pub is_event: Option<bool>,
+    pub is_hidden: Option<bool>,
+    pub is_private: Option<bool>,
+    pub is_time_extended: Option<bool>,
+    pub notify_user: Option<bool>,
+    pub required_fields: Option<String>,
+    pub task_priority: Option<i64>,
+    pub type_name: Option<String>,
+    pub uuid: Option<String>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct CommissionPhaseListResponse {
     pub data: Vec<CommissionPhase>,
     pub meta: Option<super::ListMeta>,
@@ -51,25 +82,29 @@ impl CommissionPhaseResource {
     /// Retrieve a single resource by ID.
     pub async fn retrieve(&self, id: u64, params: Option<&QueryParams>) -> Result<CommissionPhase> {
         let value = self.resource.retrieve(id, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Create a new resource.
     pub async fn create(&self, data: &Value, params: Option<&QueryParams>) -> Result<CommissionPhase> {
         let value = self.resource.create(data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Update a resource.
     pub async fn update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<CommissionPhase> {
         let value = self.resource.update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Partial update a resource.
     pub async fn partial_update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<CommissionPhase> {
         let value = self.resource.partial_update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Delete a resource.

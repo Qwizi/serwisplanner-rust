@@ -19,21 +19,47 @@ pub struct DocumentSeriesDefinition {
     pub currency: Option<String>,
     pub default_series: Option<bool>,
     pub document_subtype: Option<String>,
-    pub document_type: i64,
-    pub id: i64,
-    pub name: String,
+    pub document_type: Option<i64>,
+    pub id: Option<i64>,
+    pub name: Option<String>,
     pub numbering_schema: Option<String>,
     pub numbering_type: Option<i64>,
-    pub payment_register: Option<serde_json::Value>,
+    pub payment_register: Option<PaymentRegisterRel>,
     pub positions_active: Option<bool>,
     pub priority: Option<i64>,
     pub product_price_option: Option<i64>,
     pub serial_code_option: Option<i64>,
     pub stages: Option<i64>,
-    pub storehouse: Option<serde_json::Value>,
+    pub storehouse: Option<StorehouseRel>,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct PaymentRegisterRel {
+    pub code: Option<String>,
+    pub name: Option<String>,
+    pub payment_register_id: Option<i64>,
+    #[serde(rename = "type")]
+    pub r#type: Option<i64>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct StorehouseRel {
+    pub account: Option<i64>,
+    pub description: Option<String>,
+    pub id: Option<i64>,
+    pub import_code: Option<String>,
+    pub import_id: Option<i64>,
+    pub import_typ: Option<String>,
+    pub is_active: Option<bool>,
+    pub is_default: Option<bool>,
+    pub name: Option<String>,
+    pub short_name: Option<String>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct DocumentSeriesDefinitionListResponse {
     pub data: Vec<DocumentSeriesDefinition>,
     pub meta: Option<super::ListMeta>,
@@ -60,25 +86,29 @@ impl DocumentSeriesDefinitionResource {
     /// Retrieve a single resource by ID.
     pub async fn retrieve(&self, id: u64, params: Option<&QueryParams>) -> Result<DocumentSeriesDefinition> {
         let value = self.resource.retrieve(id, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Create a new resource.
     pub async fn create(&self, data: &Value, params: Option<&QueryParams>) -> Result<DocumentSeriesDefinition> {
         let value = self.resource.create(data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Update a resource.
     pub async fn update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<DocumentSeriesDefinition> {
         let value = self.resource.update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Partial update a resource.
     pub async fn partial_update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<DocumentSeriesDefinition> {
         let value = self.resource.partial_update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Delete a resource.

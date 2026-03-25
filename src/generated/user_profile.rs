@@ -14,7 +14,7 @@ use crate::resources::base::Resource;
 pub struct UserProfile {
     pub allowed_log_ip: Option<String>,
     pub description: Option<String>,
-    pub id_to_template: Option<serde_json::Value>,
+    pub id_to_template: Option<ProductTemplateRel>,
     pub is_active: Option<bool>,
     pub multilevel_ph_allocation: Option<i64>,
     pub multilevel_show_user: Option<String>,
@@ -22,11 +22,32 @@ pub struct UserProfile {
     pub multilevel_user_management: Option<i64>,
     pub profile_name: Option<String>,
     pub start_url: Option<String>,
-    pub user_profile_id: i64,
-    pub user_type: i64,
+    pub user_profile_id: Option<i64>,
+    pub user_type: Option<i64>,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct ProductTemplateRel {
+    pub custom_css: Option<String>,
+    pub description: Option<String>,
+    pub id: Option<i64>,
+    pub is_default_for_type: Option<bool>,
+    pub is_disallow_print_to_pdf: Option<bool>,
+    pub language: Option<String>,
+    pub name: Option<String>,
+    pub options: Option<String>,
+    pub pdf_prefix: Option<String>,
+    pub plain: Option<bool>,
+    pub priority: Option<i64>,
+    pub read_only: Option<bool>,
+    #[serde(rename = "type")]
+    pub r#type: Option<i64>,
+    pub value: Option<String>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct UserProfileListResponse {
     pub data: Vec<UserProfile>,
     pub meta: Option<super::ListMeta>,
@@ -53,25 +74,29 @@ impl UserProfileResource {
     /// Retrieve a single resource by ID.
     pub async fn retrieve(&self, id: u64, params: Option<&QueryParams>) -> Result<UserProfile> {
         let value = self.resource.retrieve(id, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Create a new resource.
     pub async fn create(&self, data: &Value, params: Option<&QueryParams>) -> Result<UserProfile> {
         let value = self.resource.create(data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Update a resource.
     pub async fn update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<UserProfile> {
         let value = self.resource.update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Partial update a resource.
     pub async fn partial_update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<UserProfile> {
         let value = self.resource.partial_update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Delete a resource.

@@ -14,15 +14,28 @@ use crate::resources::base::Resource;
 pub struct DeliveryCostDefinition {
     pub currency_code: Option<String>,
     pub delivery_cost: Option<f64>,
-    pub delivery_cost_definition_id: i64,
-    pub delivery_type: Option<serde_json::Value>,
+    pub delivery_cost_definition_id: Option<i64>,
+    pub delivery_type: Option<DeliveryTypeRel>,
     pub maximum_order_value: Option<f64>,
     pub minimum_order_value: Option<f64>,
     pub vat_id: Option<i64>,
     pub vat_value: Option<f64>,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct DeliveryTypeRel {
+    pub description: Option<String>,
+    pub id: Option<i64>,
+    pub is_active: Option<bool>,
+    pub is_default: Option<bool>,
+    pub math: Option<String>,
+    pub name: Option<String>,
+    pub value: Option<f64>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct DeliveryCostDefinitionListResponse {
     pub data: Vec<DeliveryCostDefinition>,
     pub meta: Option<super::ListMeta>,
@@ -49,25 +62,29 @@ impl DeliveryCostDefinitionResource {
     /// Retrieve a single resource by ID.
     pub async fn retrieve(&self, id: u64, params: Option<&QueryParams>) -> Result<DeliveryCostDefinition> {
         let value = self.resource.retrieve(id, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Create a new resource.
     pub async fn create(&self, data: &Value, params: Option<&QueryParams>) -> Result<DeliveryCostDefinition> {
         let value = self.resource.create(data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Update a resource.
     pub async fn update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<DeliveryCostDefinition> {
         let value = self.resource.update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Partial update a resource.
     pub async fn partial_update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<DeliveryCostDefinition> {
         let value = self.resource.partial_update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Delete a resource.

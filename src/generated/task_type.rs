@@ -12,24 +12,25 @@ use crate::resources::base::Resource;
 #[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct TaskType {
-    pub default_event_date: i64,
+    pub default_event_date: Option<i64>,
     pub default_planned_date: Option<i64>,
     pub icon: Option<String>,
     pub icon_color: Option<String>,
-    pub id: i64,
+    pub id: Option<i64>,
     pub is_automatic: Option<bool>,
     pub is_event: Option<bool>,
-    pub is_hidden: bool,
-    pub is_private: bool,
+    pub is_hidden: Option<bool>,
+    pub is_private: Option<bool>,
     pub is_time_extended: Option<bool>,
-    pub notify_user: bool,
+    pub notify_user: Option<bool>,
     pub required_fields: Option<String>,
     pub task_priority: Option<i64>,
     pub type_name: Option<String>,
     pub uuid: Option<String>,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct TaskTypeListResponse {
     pub data: Vec<TaskType>,
     pub meta: Option<super::ListMeta>,
@@ -56,25 +57,29 @@ impl TaskTypeResource {
     /// Retrieve a single resource by ID.
     pub async fn retrieve(&self, id: u64, params: Option<&QueryParams>) -> Result<TaskType> {
         let value = self.resource.retrieve(id, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Create a new resource.
     pub async fn create(&self, data: &Value, params: Option<&QueryParams>) -> Result<TaskType> {
         let value = self.resource.create(data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Update a resource.
     pub async fn update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<TaskType> {
         let value = self.resource.update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Partial update a resource.
     pub async fn partial_update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<TaskType> {
         let value = self.resource.partial_update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Delete a resource.

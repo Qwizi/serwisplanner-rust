@@ -12,13 +12,31 @@ use crate::resources::base::Resource;
 #[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct ProfileSetting {
-    pub id: i64,
-    pub name: String,
-    pub user_profile: serde_json::Value,
-    pub value: String,
+    pub id: Option<i64>,
+    pub name: Option<String>,
+    pub user_profile: Option<UserProfileRel>,
+    pub value: Option<String>,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct UserProfileRel {
+    pub allowed_log_ip: Option<String>,
+    pub description: Option<String>,
+    pub id_to_template: Option<serde_json::Value>,
+    pub is_active: Option<bool>,
+    pub multilevel_ph_allocation: Option<i64>,
+    pub multilevel_show_user: Option<String>,
+    pub multilevel_superior_allocation: Option<i64>,
+    pub multilevel_user_management: Option<i64>,
+    pub profile_name: Option<String>,
+    pub start_url: Option<String>,
+    pub user_profile_id: Option<i64>,
+    pub user_type: Option<i64>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct ProfileSettingListResponse {
     pub data: Vec<ProfileSetting>,
     pub meta: Option<super::ListMeta>,
@@ -45,25 +63,29 @@ impl ProfileSettingResource {
     /// Retrieve a single resource by ID.
     pub async fn retrieve(&self, id: u64, params: Option<&QueryParams>) -> Result<ProfileSetting> {
         let value = self.resource.retrieve(id, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Create a new resource.
     pub async fn create(&self, data: &Value, params: Option<&QueryParams>) -> Result<ProfileSetting> {
         let value = self.resource.create(data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Update a resource.
     pub async fn update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<ProfileSetting> {
         let value = self.resource.update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Partial update a resource.
     pub async fn partial_update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<ProfileSetting> {
         let value = self.resource.partial_update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Delete a resource.
