@@ -1,6 +1,6 @@
 [package]
 name = "serwis-planner"
-version = "2026.325.1"
+version = "2026.325.3"
 edition = "2021"
 description = "Rust client library for the Serwis Planner API"
 license = "MIT"
