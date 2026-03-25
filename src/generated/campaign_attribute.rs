@@ -13,23 +13,54 @@ use crate::resources::base::Resource;
 #[serde(default, rename_all = "camelCase")]
 pub struct CampaignAttribute {
     pub additional_options: Option<String>,
-    pub attribute_multis: serde_json::Value,
-    pub creation: i64,
+    pub attribute_multis: Option<CampaignAttributeMultiRel>,
+    pub creation: Option<i64>,
     pub filter_as_tags: Option<bool>,
-    pub id: i64,
+    pub id: Option<i64>,
     pub is_active: Option<bool>,
-    pub loss: i64,
-    pub name: String,
+    pub loss: Option<i64>,
+    pub name: Option<String>,
+    pub option: Option<String>,
+    pub ordering: Option<i64>,
+    pub parent: Option<CampaignAttributeRel>,
+    pub searching_for_options: Option<bool>,
+    #[serde(rename = "type")]
+    pub r#type: Option<i64>,
+    pub win: Option<i64>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct CampaignAttributeMultiRel {
+    pub attribute: Option<serde_json::Value>,
+    pub id: Option<i64>,
+    pub is_active: Option<bool>,
+    pub name: Option<String>,
+    pub ordering: Option<i64>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct CampaignAttributeRel {
+    pub additional_options: Option<String>,
+    pub attribute_multis: Option<serde_json::Value>,
+    pub creation: Option<i64>,
+    pub filter_as_tags: Option<bool>,
+    pub id: Option<i64>,
+    pub is_active: Option<bool>,
+    pub loss: Option<i64>,
+    pub name: Option<String>,
     pub option: Option<String>,
     pub ordering: Option<i64>,
     pub parent: Option<serde_json::Value>,
     pub searching_for_options: Option<bool>,
     #[serde(rename = "type")]
-    pub r#type: i64,
-    pub win: i64,
+    pub r#type: Option<i64>,
+    pub win: Option<i64>,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct CampaignAttributeListResponse {
     pub data: Vec<CampaignAttribute>,
     pub meta: Option<super::ListMeta>,
@@ -56,25 +87,29 @@ impl CampaignAttributeResource {
     /// Retrieve a single resource by ID.
     pub async fn retrieve(&self, id: u64, params: Option<&QueryParams>) -> Result<CampaignAttribute> {
         let value = self.resource.retrieve(id, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Create a new resource.
     pub async fn create(&self, data: &Value, params: Option<&QueryParams>) -> Result<CampaignAttribute> {
         let value = self.resource.create(data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Update a resource.
     pub async fn update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<CampaignAttribute> {
         let value = self.resource.update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Partial update a resource.
     pub async fn partial_update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<CampaignAttribute> {
         let value = self.resource.partial_update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Delete a resource.

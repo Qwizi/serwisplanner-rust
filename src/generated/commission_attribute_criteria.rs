@@ -12,14 +12,51 @@ use crate::resources::base::Resource;
 #[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct CommissionAttributeCriteria {
-    pub attribute: Option<serde_json::Value>,
+    pub attribute: Option<CommissionAttributeRel>,
     pub comparision: Option<i64>,
-    pub id: i64,
-    pub relation: Option<serde_json::Value>,
+    pub id: Option<i64>,
+    pub relation: Option<CommissionAttributeRelationsRel>,
     pub value: Option<String>,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct CommissionAttributeRel {
+    pub additional_options: Option<String>,
+    pub attribute_multis: Option<serde_json::Value>,
+    pub chatbox: Option<bool>,
+    pub display_priority: Option<i64>,
+    pub document_series_definition: Option<String>,
+    pub file: Option<serde_json::Value>,
+    pub filter_as_tags: Option<bool>,
+    pub id: Option<i64>,
+    pub is_active: Option<bool>,
+    pub is_for_position: Option<bool>,
+    pub name: Option<String>,
+    pub option: Option<String>,
+    pub ordering: Option<i64>,
+    pub parent: Option<serde_json::Value>,
+    pub register_event_onchange: Option<bool>,
+    pub searching_for_options: Option<bool>,
+    pub task_type: Option<serde_json::Value>,
+    pub tooltip: Option<String>,
+    #[serde(rename = "type")]
+    pub r#type: Option<i64>,
+    pub uuid: Option<String>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct CommissionAttributeRelationsRel {
+    pub attribute: Option<serde_json::Value>,
+    pub id: Option<i64>,
+    pub name: Option<String>,
+    pub priority: Option<i64>,
+    pub product_template: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct CommissionAttributeCriteriaListResponse {
     pub data: Vec<CommissionAttributeCriteria>,
     pub meta: Option<super::ListMeta>,
@@ -46,25 +83,29 @@ impl CommissionAttributeCriteriaResource {
     /// Retrieve a single resource by ID.
     pub async fn retrieve(&self, id: u64, params: Option<&QueryParams>) -> Result<CommissionAttributeCriteria> {
         let value = self.resource.retrieve(id, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Create a new resource.
     pub async fn create(&self, data: &Value, params: Option<&QueryParams>) -> Result<CommissionAttributeCriteria> {
         let value = self.resource.create(data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Update a resource.
     pub async fn update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<CommissionAttributeCriteria> {
         let value = self.resource.update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Partial update a resource.
     pub async fn partial_update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<CommissionAttributeCriteria> {
         let value = self.resource.partial_update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Delete a resource.

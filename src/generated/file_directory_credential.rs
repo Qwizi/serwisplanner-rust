@@ -13,13 +13,40 @@ use crate::resources::base::Resource;
 #[serde(default, rename_all = "camelCase")]
 pub struct FileDirectoryCredential {
     pub credential: Option<i64>,
-    pub file_directory: Option<serde_json::Value>,
+    pub file_directory: Option<FileDirectoryRel>,
     pub file_directory_type: Option<i64>,
-    pub id: i64,
-    pub profile: Option<serde_json::Value>,
+    pub id: Option<i64>,
+    pub profile: Option<UserProfileRel>,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct FileDirectoryRel {
+    pub id: Option<i64>,
+    pub is_last_directory: Option<bool>,
+    pub name: Option<String>,
+    pub parent_directory: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct UserProfileRel {
+    pub allowed_log_ip: Option<String>,
+    pub description: Option<String>,
+    pub id_to_template: Option<serde_json::Value>,
+    pub is_active: Option<bool>,
+    pub multilevel_ph_allocation: Option<i64>,
+    pub multilevel_show_user: Option<String>,
+    pub multilevel_superior_allocation: Option<i64>,
+    pub multilevel_user_management: Option<i64>,
+    pub profile_name: Option<String>,
+    pub start_url: Option<String>,
+    pub user_profile_id: Option<i64>,
+    pub user_type: Option<i64>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct FileDirectoryCredentialListResponse {
     pub data: Vec<FileDirectoryCredential>,
     pub meta: Option<super::ListMeta>,
@@ -46,25 +73,29 @@ impl FileDirectoryCredentialResource {
     /// Retrieve a single resource by ID.
     pub async fn retrieve(&self, id: u64, params: Option<&QueryParams>) -> Result<FileDirectoryCredential> {
         let value = self.resource.retrieve(id, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Create a new resource.
     pub async fn create(&self, data: &Value, params: Option<&QueryParams>) -> Result<FileDirectoryCredential> {
         let value = self.resource.create(data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Update a resource.
     pub async fn update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<FileDirectoryCredential> {
         let value = self.resource.update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Partial update a resource.
     pub async fn partial_update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<FileDirectoryCredential> {
         let value = self.resource.partial_update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Delete a resource.

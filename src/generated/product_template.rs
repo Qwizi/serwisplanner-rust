@@ -14,14 +14,14 @@ use crate::resources::base::Resource;
 pub struct ProductTemplate {
     pub custom_css: Option<String>,
     pub description: Option<String>,
-    pub id: i64,
+    pub id: Option<i64>,
     pub is_default_for_type: Option<bool>,
     pub is_disallow_print_to_pdf: Option<bool>,
     pub language: Option<String>,
     pub name: Option<String>,
     pub options: Option<String>,
     pub pdf_prefix: Option<String>,
-    pub plain: bool,
+    pub plain: Option<bool>,
     pub priority: Option<i64>,
     pub read_only: Option<bool>,
     #[serde(rename = "type")]
@@ -29,7 +29,8 @@ pub struct ProductTemplate {
     pub value: Option<String>,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct ProductTemplateListResponse {
     pub data: Vec<ProductTemplate>,
     pub meta: Option<super::ListMeta>,
@@ -56,25 +57,29 @@ impl ProductTemplateResource {
     /// Retrieve a single resource by ID.
     pub async fn retrieve(&self, id: u64, params: Option<&QueryParams>) -> Result<ProductTemplate> {
         let value = self.resource.retrieve(id, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Create a new resource.
     pub async fn create(&self, data: &Value, params: Option<&QueryParams>) -> Result<ProductTemplate> {
         let value = self.resource.create(data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Update a resource.
     pub async fn update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<ProductTemplate> {
         let value = self.resource.update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Partial update a resource.
     pub async fn partial_update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<ProductTemplate> {
         let value = self.resource.partial_update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Delete a resource.

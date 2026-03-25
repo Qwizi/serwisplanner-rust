@@ -14,15 +14,73 @@ use crate::resources::base::Resource;
 pub struct Basket {
     pub creation_date: Option<String>,
     pub currency_code: Option<String>,
-    pub discount_code: Option<serde_json::Value>,
-    pub id: i64,
-    pub name: String,
-    pub positions: serde_json::Value,
+    pub discount_code: Option<DiscountCodeRel>,
+    pub id: Option<i64>,
+    pub name: Option<String>,
+    pub positions: Option<BasketPositionRel>,
     pub value_brutto: Option<f64>,
     pub value_netto: Option<f64>,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct BasketPositionRel {
+    pub attributes: Option<String>,
+    pub base_price_brutto: Option<f64>,
+    pub base_price_netto: Option<f64>,
+    pub base_rabat: Option<f64>,
+    pub base_value_brutto: Option<f64>,
+    pub base_value_netto: Option<f64>,
+    pub basket: Option<serde_json::Value>,
+    pub change_quantity: Option<bool>,
+    pub custom_name: Option<String>,
+    pub discount_code: Option<serde_json::Value>,
+    pub document: Option<serde_json::Value>,
+    pub id: Option<i64>,
+    pub margin: Option<f64>,
+    pub measure_unit: Option<serde_json::Value>,
+    pub modification_date: Option<String>,
+    pub price_brutto: Option<f64>,
+    pub price_netto: Option<f64>,
+    pub price_rabat: Option<f64>,
+    pub price_rabat_brutto: Option<f64>,
+    pub price_vat: Option<f64>,
+    pub product: Option<serde_json::Value>,
+    pub product_complete: Option<serde_json::Value>,
+    pub product_freetype: Option<serde_json::Value>,
+    pub quantity: Option<f64>,
+    pub rabat: Option<f64>,
+    pub srp: Option<f64>,
+    pub value_brutto: Option<f64>,
+    pub value_brutto_after_discounts: Option<f64>,
+    pub value_netto: Option<f64>,
+    pub value_netto_after_discounts: Option<f64>,
+    pub vat: Option<serde_json::Value>,
+    pub vat_name: Option<String>,
+    pub vat_value: Option<f64>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct DiscountCodeRel {
+    pub auto_add_discount_code: Option<bool>,
+    pub auto_add_products: Option<bool>,
+    pub code: Option<String>,
+    pub creation_date: Option<String>,
+    pub creator_user: Option<serde_json::Value>,
+    pub end_date: Option<String>,
+    pub id: Option<i64>,
+    pub name: Option<String>,
+    pub scope: Option<i64>,
+    pub start_date: Option<String>,
+    #[serde(rename = "type")]
+    pub r#type: Option<i64>,
+    pub usage_limit: Option<i64>,
+    pub value: Option<f64>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct BasketListResponse {
     pub data: Vec<Basket>,
     pub meta: Option<super::ListMeta>,
@@ -49,25 +107,29 @@ impl BasketResource {
     /// Retrieve a single resource by ID.
     pub async fn retrieve(&self, id: u64, params: Option<&QueryParams>) -> Result<Basket> {
         let value = self.resource.retrieve(id, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Create a new resource.
     pub async fn create(&self, data: &Value, params: Option<&QueryParams>) -> Result<Basket> {
         let value = self.resource.create(data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Update a resource.
     pub async fn update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<Basket> {
         let value = self.resource.update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Partial update a resource.
     pub async fn partial_update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<Basket> {
         let value = self.resource.partial_update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Delete a resource.

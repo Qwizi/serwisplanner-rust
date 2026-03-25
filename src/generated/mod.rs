@@ -2,10 +2,9 @@
 //!
 //! Do not edit manually. Regenerate with: `python3 codegen.py <yaml>`
 
-#![allow(deprecated)]
-
 /// Pagination metadata returned in list responses.
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct ListMeta {
     pub total: Option<i64>,
     pub limit: Option<i64>,

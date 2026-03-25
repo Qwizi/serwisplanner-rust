@@ -20,10 +20,10 @@ pub struct InternalDocumentOrder {
     pub currency_code: Option<String>,
     pub date_delivery: Option<String>,
     pub default_address: Option<String>,
-    pub delivery_type: Option<serde_json::Value>,
+    pub delivery_type: Option<DeliveryTypeRel>,
     pub document_header: Option<String>,
-    pub document_id: i64,
-    pub document_series_definition: Option<serde_json::Value>,
+    pub document_id: Option<i64>,
+    pub document_series_definition: Option<DocumentSeriesDefinitionRel>,
     pub document_status: Option<i64>,
     pub document_status_by_ph: Option<i64>,
     pub document_value_brutto: Option<f64>,
@@ -32,7 +32,7 @@ pub struct InternalDocumentOrder {
     pub document_value_netto_in_currency: Option<f64>,
     pub document_value_rabat: Option<f64>,
     pub document_value_rabat_in_currency: Option<f64>,
-    pub exchange_history: Option<serde_json::Value>,
+    pub exchange_history: Option<ExchangeHistoryRel>,
     pub external_date: Option<String>,
     pub external_number: Option<String>,
     pub import_code: Option<String>,
@@ -46,15 +46,171 @@ pub struct InternalDocumentOrder {
     pub notes: Option<String>,
     pub order_time: Option<String>,
     pub order_type: Option<i64>,
-    pub payment_type: Option<serde_json::Value>,
-    pub place: Option<serde_json::Value>,
-    pub storehouse: Option<serde_json::Value>,
-    pub user: Option<serde_json::Value>,
+    pub payment_type: Option<PaymentTypeRel>,
+    pub place: Option<PlacesRel>,
+    pub storehouse: Option<StorehouseRel>,
+    pub user: Option<AccountUserRel>,
     pub user_ph_id: Option<i64>,
     pub user_ph_name: Option<String>,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct AccountUserRel {
+    pub active_currency: Option<String>,
+    pub additional_contacts: Option<serde_json::Value>,
+    pub authorized_to_make_orders: Option<bool>,
+    pub available_currencies: Option<String>,
+    pub avatar: Option<String>,
+    pub avatar_file: Option<serde_json::Value>,
+    pub company: Option<serde_json::Value>,
+    pub consent_processing_personal_data: Option<bool>,
+    pub default_currency: Option<String>,
+    pub default_language: Option<String>,
+    pub email: Option<String>,
+    pub failed_login_counter: Option<i64>,
+    pub first_name: Option<String>,
+    pub id: Option<i64>,
+    pub import_code: Option<String>,
+    pub import_id: Option<i64>,
+    pub import_typ: Option<String>,
+    pub is2fa_active: Option<bool>,
+    pub is_invoice_user: Option<bool>,
+    pub language: Option<String>,
+    pub last_failed_login: Option<String>,
+    pub last_failed_login_ip: Option<String>,
+    pub last_login: Option<String>,
+    pub last_login_ip: Option<String>,
+    pub last_name: Option<String>,
+    pub method2fa: Option<String>,
+    pub mobile_number: Option<String>,
+    pub modification_date: Option<String>,
+    pub newsletter_active: Option<bool>,
+    pub phone_number: Option<String>,
+    pub place: Option<serde_json::Value>,
+    pub scoring: Option<i64>,
+    pub system_theme: Option<String>,
+    pub user_profile: Option<serde_json::Value>,
+    pub username: Option<String>,
+    pub verified: Option<String>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct DeliveryTypeRel {
+    pub description: Option<String>,
+    pub id: Option<i64>,
+    pub is_active: Option<bool>,
+    pub is_default: Option<bool>,
+    pub math: Option<String>,
+    pub name: Option<String>,
+    pub value: Option<f64>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct DocumentSeriesDefinitionRel {
+    pub account: Option<i64>,
+    pub additional_data: Option<String>,
+    pub available_templates: Option<String>,
+    pub create_connected_document_store: Option<i64>,
+    pub currency: Option<String>,
+    pub default_series: Option<bool>,
+    pub document_subtype: Option<String>,
+    pub document_type: Option<i64>,
+    pub id: Option<i64>,
+    pub name: Option<String>,
+    pub numbering_schema: Option<String>,
+    pub numbering_type: Option<i64>,
+    pub payment_register: Option<serde_json::Value>,
+    pub positions_active: Option<bool>,
+    pub priority: Option<i64>,
+    pub product_price_option: Option<i64>,
+    pub serial_code_option: Option<i64>,
+    pub stages: Option<i64>,
+    pub storehouse: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct ExchangeHistoryRel {
+    pub currency_code_from: Option<String>,
+    pub currency_code_to: Option<String>,
+    pub exchange_date: Option<String>,
+    pub exchange_ratio: Option<f64>,
+    pub exchange_source: Option<String>,
+    pub exchange_type: Option<i64>,
+    pub id: Option<i64>,
+    pub import_code: Option<String>,
+    pub import_id: Option<i64>,
+    pub import_typ: Option<String>,
+    pub pair: Option<String>,
+    pub reverse_ratio: Option<f64>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct PaymentTypeRel {
+    pub check_company_credit_limit: Option<bool>,
+    pub description: Option<String>,
+    pub id: Option<i64>,
+    pub import_code: Option<String>,
+    pub import_id: Option<i64>,
+    pub import_typ: Option<String>,
+    pub is_default: Option<bool>,
+    pub name: Option<String>,
+    pub online_payment: Option<bool>,
+    pub payment_subtype: Option<String>,
+    #[serde(rename = "type")]
+    pub r#type: Option<String>,
+    pub value: Option<f64>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct PlacesRel {
+    pub city: Option<String>,
+    pub community: Option<String>,
+    pub company: Option<serde_json::Value>,
+    pub coordinates_modification_date: Option<String>,
+    pub country: Option<String>,
+    pub county: Option<String>,
+    pub description: Option<String>,
+    pub email: Option<String>,
+    pub id: Option<i64>,
+    pub import_code: Option<String>,
+    pub import_id: Option<i64>,
+    pub import_typ: Option<String>,
+    pub latitude: Option<f64>,
+    pub local_number: Option<String>,
+    pub longitude: Option<f64>,
+    pub main_address: Option<bool>,
+    pub modification_date: Option<String>,
+    pub name: Option<String>,
+    pub phone_number: Option<String>,
+    pub postal_code: Option<String>,
+    pub province: Option<String>,
+    pub street_address: Option<String>,
+    pub street_number: Option<String>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct StorehouseRel {
+    pub account: Option<i64>,
+    pub description: Option<String>,
+    pub id: Option<i64>,
+    pub import_code: Option<String>,
+    pub import_id: Option<i64>,
+    pub import_typ: Option<String>,
+    pub is_active: Option<bool>,
+    pub is_default: Option<bool>,
+    pub name: Option<String>,
+    pub short_name: Option<String>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct InternalDocumentOrderListResponse {
     pub data: Vec<InternalDocumentOrder>,
     pub meta: Option<super::ListMeta>,
@@ -81,25 +237,29 @@ impl InternalDocumentOrderResource {
     /// Retrieve a single resource by ID.
     pub async fn retrieve(&self, id: u64, params: Option<&QueryParams>) -> Result<InternalDocumentOrder> {
         let value = self.resource.retrieve(id, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Create a new resource.
     pub async fn create(&self, data: &Value, params: Option<&QueryParams>) -> Result<InternalDocumentOrder> {
         let value = self.resource.create(data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Update a resource.
     pub async fn update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<InternalDocumentOrder> {
         let value = self.resource.update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Partial update a resource.
     pub async fn partial_update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<InternalDocumentOrder> {
         let value = self.resource.partial_update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Delete a resource.

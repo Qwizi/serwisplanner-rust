@@ -13,9 +13,9 @@ use crate::resources::base::Resource;
 #[serde(default, rename_all = "camelCase")]
 pub struct ProductAttribute {
     pub additional_options: Option<String>,
-    pub attribute_multis: serde_json::Value,
-    pub elasticsearch_active: bool,
-    pub id: i64,
+    pub attribute_multis: Option<ProductAttributeMultiRel>,
+    pub elasticsearch_active: Option<bool>,
+    pub id: Option<i64>,
     pub import_code: Option<String>,
     pub import_id: Option<i64>,
     pub import_typ: Option<String>,
@@ -26,7 +26,19 @@ pub struct ProductAttribute {
     pub r#type: Option<i64>,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct ProductAttributeMultiRel {
+    pub attribute: Option<serde_json::Value>,
+    pub attribute_multi_id: Option<i64>,
+    pub import_id: Option<i64>,
+    pub import_typ: Option<String>,
+    pub name: Option<String>,
+    pub ordering: Option<i64>,
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct ProductAttributeListResponse {
     pub data: Vec<ProductAttribute>,
     pub meta: Option<super::ListMeta>,
@@ -53,25 +65,29 @@ impl ProductAttributeResource {
     /// Retrieve a single resource by ID.
     pub async fn retrieve(&self, id: u64, params: Option<&QueryParams>) -> Result<ProductAttribute> {
         let value = self.resource.retrieve(id, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Create a new resource.
     pub async fn create(&self, data: &Value, params: Option<&QueryParams>) -> Result<ProductAttribute> {
         let value = self.resource.create(data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Update a resource.
     pub async fn update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<ProductAttribute> {
         let value = self.resource.update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Partial update a resource.
     pub async fn partial_update(&self, id: u64, data: &Value, params: Option<&QueryParams>) -> Result<ProductAttribute> {
         let value = self.resource.partial_update(id, data, params).await?;
-        serde_json::from_value(value).map_err(|e| crate::error::SWError::Other(e.to_string()))
+        let inner = value.get("data").cloned().unwrap_or(value);
+        serde_json::from_value(inner).map_err(|e| crate::error::SWError::Other(e.to_string()))
     }
 
     /// Delete a resource.
