@@ -802,7 +802,7 @@ dependencies = [
 
 [[package]]
 name = "serwis-planner"
-version = "2026.325.6"
+version = "2026.325.7"
 dependencies = [
  "reqwest",
  "serde",
