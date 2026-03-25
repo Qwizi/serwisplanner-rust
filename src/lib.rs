@@ -1,5 +1,6 @@
 pub mod client;
 pub mod error;
+pub mod generated;
 pub mod params;
 pub mod resources;
 
