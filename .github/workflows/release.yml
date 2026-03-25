@@ -1,0 +1,113 @@
+name: Release and Publish crates.io
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - src/**
+      - Cargo.toml
+      - Cargo.lock
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Set CalVer and create GitHub release
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute and set CalVer in Cargo.toml
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git fetch --tags --force
+
+          OLD_VERSION="$(grep '^version' Cargo.toml | head -1 | sed 's/.*"\(.*\)"/\1/')"
+          YEAR="$(date -u +%Y)"
+          MONTH="$((10#$(date -u +%m)))"
+          DAY="$((10#$(date -u +%d)))"
+          CALVER_PREFIX="${YEAR}.${MONTH}.${DAY}"
+
+          NEXT_BUILD=1
+          while read -r TAG_LINE; do
+            BUILD="${TAG_LINE#v${CALVER_PREFIX}.}"
+            if [[ "${BUILD}" =~ ^[0-9]+$ ]] && (( BUILD >= NEXT_BUILD )); then
+              NEXT_BUILD=$((BUILD + 1))
+            fi
+          done < <(git tag --list "v${CALVER_PREFIX}.*")
+
+          NEW_VERSION="${CALVER_PREFIX}.${NEXT_BUILD}"
+          sed -i "0,/^version = \".*\"/s//version = \"${NEW_VERSION}\"/" Cargo.toml
+
+          TAG="v${NEW_VERSION}"
+
+          echo "old_version=${OLD_VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "version=${NEW_VERSION}"     >> "${GITHUB_OUTPUT}"
+          echo "tag=${TAG}"                 >> "${GITHUB_OUTPUT}"
+
+      - name: Commit version bump and push
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add Cargo.toml
+          if git diff --cached --quiet; then
+            echo "No version changes detected"
+          else
+            git commit -m "release: bump version to ${{ steps.version.outputs.tag }} [skip ci]"
+            git push origin HEAD:${GITHUB_REF_NAME}
+          fi
+
+          if git rev-parse "${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
+            echo "Tag ${{ steps.version.outputs.tag }} already exists"
+          else
+            git tag "${{ steps.version.outputs.tag }}"
+            git push origin "${{ steps.version.outputs.tag }}"
+          fi
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ steps.version.outputs.tag }}
+          tag_name: ${{ steps.version.outputs.tag }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish:
+    name: Build and publish to crates.io
+    runs-on: ubuntu-latest
+    needs: release
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.tag }}
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Publish
+        run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }}
