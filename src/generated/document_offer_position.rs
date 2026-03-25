@@ -2,8 +2,8 @@
 //!
 //! Do not edit manually. Regenerate with: `python3 codegen.py <yaml>`
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
 pub struct DocumentOfferPosition {
     pub document_offer: Option<serde_json::Value>,
     pub id: i64,

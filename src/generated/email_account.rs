@@ -9,8 +9,8 @@ use crate::error::Result;
 use crate::params::QueryParams;
 use crate::resources::base::Resource;
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
 pub struct EmailAccount {
     pub append_to_send: Option<bool>,
     pub archival: Option<bool>,

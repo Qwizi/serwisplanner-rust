@@ -9,8 +9,8 @@ use crate::error::Result;
 use crate::params::QueryParams;
 use crate::resources::base::Resource;
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
 pub struct PaymentType {
     pub check_company_credit_limit: Option<bool>,
     pub description: Option<String>,

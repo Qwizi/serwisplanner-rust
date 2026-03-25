@@ -9,8 +9,8 @@ use crate::error::Result;
 use crate::params::QueryParams;
 use crate::resources::base::Resource;
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
 pub struct MainMenu {
     pub component_type: i64,
     pub description: Option<String>,
