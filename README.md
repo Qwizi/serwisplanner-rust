@@ -1,13 +1,14 @@
 # serwis-planner
 
-Rust client for the Serwis Planner API.
+Rust client for the Serwis Planner API (AURA API 2.0). 93 typed resource accessors, auto-generated from the OpenAPI spec.
 
 ## Installation
 
 ```toml
 [dependencies]
-serwis-planner = "0.1"
+serwis-planner = "2026.325"
 tokio = { version = "1", features = ["full"] }
+serde_json = "1"
 ```
 
 ## Usage
@@ -26,25 +27,31 @@ async fn main() -> serwis_planner::Result<()> {
     // Current user
     let me = client.me().await?;
 
-    // List with filters
+    // List with filters (typed response)
     let params = QueryParams::new()
         .filter("name__contains", "STB")
         .limit(50);
-    let companies = client.account().companies().list(Some(&params)).await?;
+    let response = client.account_company().list(Some(&params)).await?;
+    for company in &response.data {
+        println!("{}: {:?}", company.id, company.name);
+    }
 
-    // CRUD
-    let company = client.account().companies().retrieve(123, None).await?;
-    let new_co = client.account().companies().create(&json!({"name": "New Co"}), None).await?;
-    client.account().companies().update(123, &json!({"name": "Updated"}), None).await?;
-    client.account().companies().delete(123, None).await?;
+    // Retrieve (typed)
+    let company = client.account_company().retrieve(123, None).await?;
 
-    // Auto-pagination
-    let all_companies = client.account().companies().all(None).await?;
+    // Create
+    let new_co = client.account_company().create(&json!({"name": "New Co"}), None).await?;
 
-    // PDF generation
-    let pdf = client.products().generate_pdf(123, Some(1)).await?;
+    // Update
+    client.account_company().update(123, &json!({"name": "Updated"}), None).await?;
 
-    // File upload
+    // Delete
+    client.account_company().delete(123, None).await?;
+
+    // Auto-pagination (returns Vec<AccountCompany>)
+    let all_companies = client.account_company().all(None).await?;
+
+    // File upload (multipart)
     let bytes = std::fs::read("doc.pdf").unwrap();
     client.files().upload("doc.pdf", bytes, "application/pdf", None).await?;
 
@@ -69,31 +76,72 @@ let params = QueryParams::new()
 
 ## Resources
 
-| Accessor | Path | Sub-resources |
-|---|---|---|
-| `client.account().companies()` | `/api/account_companies` | `.attributes()`, `.histories()` |
-| `client.account().users()` | `/api/account_users` | `.attributes()`, `.histories()` |
-| `client.commissions()` | `/api/commissions` | `.attributes()`, `.phases()`, `.scope_types()`, `.shortcuts()`, `.users()` |
-| `client.files()` | `/api/files` | `.directories()` |
-| `client.kanbans()` | `/api/kanbans` | |
-| `client.places()` | `/api/places` | `.attributes()` |
-| `client.products()` | `/api/products` | `.attributes()`, `.categories()`, `.templates()` |
-| `client.serviced_products()` | `/api/serviced_products` | `.attributes()` |
-| `client.users()` | `/api/user_users` | `.attributes()`, `.histories()` |
-| `client.user_profiles()` | `/api/user_profiles` | |
+All resources return typed structs. 93 resource accessors available, including:
+
+| Accessor | Path |
+|---|---|
+| `account_company()` | `/api/account_companies` |
+| `account_company_attribute()` | `/api/account_company_attributes` |
+| `account_company_history()` | `/api/account_company_histories` |
+| `account_user()` | `/api/account_users` |
+| `account_user_attribute()` | `/api/account_user_attributes` |
+| `basket()` | `/api/baskets` |
+| `campaign()` | `/api/campaigns` |
+| `campaign_opportunity()` | `/api/campaign_opportunities` |
+| `commission()` | `/api/commissions` |
+| `commission_attribute()` | `/api/commission_attributes` |
+| `commission_phase()` | `/api/commission_phases` |
+| `discount()` | `/api/discounts` |
+| `discount_code()` | `/api/discount_codes` |
+| `document_invoice()` | `/api/document_invoices` |
+| `document_offer()` | `/api/document_offers` |
+| `document_order()` | `/api/document_orders` |
+| `document_store()` | `/api/document_stores` |
+| `email_message()` | `/api/email_messages` |
+| `email_template()` | `/api/email_templates` |
+| `favorite()` | `/api/favorites` |
+| `kanban()` | `/api/kanbans` |
+| `message_thread()` | `/api/message_threads` |
+| `places()` | `/api/places` |
+| `product()` | `/api/products` |
+| `product_attribute()` | `/api/product_attributes` |
+| `product_category()` | `/api/product_categories` |
+| `serviced_product()` | `/api/serviced_products` |
+| `setting()` | `/api/settings` |
+| `task()` | `/api/tasks` |
+| `task_type()` | `/api/task_types` |
+| `target()` | `/api/targets` |
+| `user_user()` | `/api/user_users` |
+| `user_profile()` | `/api/user_profiles` |
+| `vat()` | `/api/vats` |
+
+Each resource provides: `list()`, `retrieve()`, `create()`, `update()`, `partial_update()`, `delete()`, `all()`, `meta()`, `autoselect()`.
+
+Special resources: `auth()` (login), `files()` (multipart upload), `me()`, `mobile_phases_config()`.
 
 ## Error handling
 
 ```rust
 use serwis_planner::SWError;
 
-match client.account().companies().retrieve(999, None).await {
-    Ok(data) => println!("{}", data),
+match client.account_company().retrieve(999, None).await {
+    Ok(company) => println!("{:?}", company.name),
     Err(SWError::NotFound { .. }) => println!("not found"),
     Err(SWError::Validation { errors, .. }) => println!("validation: {}", errors),
     Err(SWError::Authentication { .. }) => println!("unauthorized"),
+    Err(SWError::RateLimit { .. }) => println!("rate limited"),
     Err(e) => println!("error: {}", e),
 }
+```
+
+## Codegen
+
+Types and resource accessors are auto-generated from the AURA API OpenAPI spec:
+
+```bash
+curl -o aura-api.yaml https://serwis.stb.tech/manual/api/download/yaml/full
+python3 codegen.py aura-api.yaml
+cargo build
 ```
 
 ## License
