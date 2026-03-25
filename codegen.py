@@ -61,8 +61,8 @@ def to_rust_type(prop: dict, nullable: bool) -> str:
 
 def generate_struct(name: str, props: dict) -> str:
     lines = [
-        "#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]",
-        "#[serde(rename_all = \"camelCase\")]",
+        "#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]",
+        "#[serde(default, rename_all = \"camelCase\")]",
         f"pub struct {name} {{",
     ]
     for pname, pdef in sorted(props.items()):
