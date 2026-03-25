@@ -91,6 +91,20 @@ def get_schema_props(schema: dict) -> dict:
     return props
 
 
+def pluralize(word: str) -> list[str]:
+    """Return possible plural forms of a snake_case word."""
+    forms = [word + "s"]
+    if word.endswith("y"):
+        # company -> companies, history -> histories, category -> categories
+        forms.append(word[:-1] + "ies")
+        # API typo: holiday -> holidaies
+        forms.append(word[:-1] + "aies")
+    if word.endswith("s") or word.endswith("x") or word.endswith("sh"):
+        forms.append(word + "es")
+    forms.append(word)
+    return forms
+
+
 def find_api_path(resource: str, api_paths: dict) -> str | None:
     candidates = []
     for p in api_paths:
@@ -99,8 +113,8 @@ def find_api_path(resource: str, api_paths: dict) -> str | None:
             base = segments[1].split("{")[0].rstrip("/")
             candidates.append((p, base))
 
-    for suffix in ["s", "es", ""]:
-        tag_var = snake_case(resource) + suffix
+    sn = snake_case(resource)
+    for tag_var in pluralize(sn):
         for p, base in candidates:
             if base == tag_var:
                 return f"/api/{base}"
@@ -320,16 +334,26 @@ def main():
     print(f"  {active_count} active types, {deprecated_count} deprecated types")
     print(f"  {resource_count} typed resource accessors")
 
-    # Print client accessors
-    print("\n// === client.rs accessor methods ===\n")
+    # Generate _generated_accessors.rs (included by client.rs)
+    acc_lines = [
+        "// Auto-generated resource accessor methods.",
+        "// Do not edit manually. Regenerate with: python3 codegen.py <yaml>",
+        "",
+        "impl SerwisPlanner {",
+    ]
     for mod_name, resource, is_deprecated, has_resource, api_path in mod_names:
         if not has_resource:
             continue
-        print(f"    /// `{api_path}`")
-        print(f"    pub fn {mod_name}(&self) -> crate::generated::{resource}Resource {{")
-        print(f"        crate::generated::{resource}Resource::new(self.inner.clone())")
-        print(f"    }}")
-        print()
+        acc_lines.append(f"    /// `{api_path}`")
+        acc_lines.append(f"    pub fn {mod_name}(&self) -> crate::generated::{resource}Resource {{")
+        acc_lines.append(f"        crate::generated::{resource}Resource::new(self.inner.clone())")
+        acc_lines.append(f"    }}")
+        acc_lines.append("")
+    acc_lines.append("}")
+
+    acc_path = SRC / "_generated_accessors.rs"
+    acc_path.write_text("\n".join(acc_lines) + "\n")
+    print(f"Generated {acc_path} ({sum(1 for _, _, _, h, _ in mod_names if h)} accessors)")
 
 
 if __name__ == "__main__":
