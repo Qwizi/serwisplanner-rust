@@ -1,21 +1,7 @@
 pub mod base;
 pub mod auth;
-pub mod account;
-pub mod commissions;
 pub mod files;
-pub mod kanbans;
-pub mod places;
-pub mod products;
-pub mod serviced_products;
-pub mod users;
 
 pub use auth::AuthResource;
-pub use account::{AccountResource, AccountCompaniesResource, AccountUsersResource};
-pub use commissions::{CommissionsResource, CommissionAttributesResource};
 pub use files::FilesResource;
-pub use kanbans::KanbansResource;
-pub use places::PlacesResource;
-pub use products::ProductsResource;
-pub use serviced_products::ServicedProductsResource;
-pub use users::{UsersResource, UserProfilesResource};
 pub use base::Resource;

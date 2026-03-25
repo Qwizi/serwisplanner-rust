@@ -1,0 +1,52 @@
+//! Auto-generated module for `AccountCompany`.
+//!
+//! Do not edit manually. Regenerate with: `python3 codegen.py <yaml>`
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountCompany {
+    pub account_users: serde_json::Value,
+    pub additional_phs: Option<serde_json::Value>,
+    pub address_city: Option<String>,
+    pub address_community: Option<String>,
+    pub address_country: Option<String>,
+    pub address_county: Option<String>,
+    pub address_local_number: Option<String>,
+    pub address_postal_code: Option<String>,
+    pub address_province: Option<String>,
+    pub address_street: Option<String>,
+    pub address_street_number: Option<String>,
+    pub block_order: Option<bool>,
+    pub created_at: Option<String>,
+    pub creation_type: Option<i64>,
+    pub credit_limit_date: Option<String>,
+    pub credit_limit_free: Option<f64>,
+    pub default_delivery_type: Option<serde_json::Value>,
+    pub default_language: Option<String>,
+    pub default_order_series: Option<serde_json::Value>,
+    pub default_payment_type: Option<serde_json::Value>,
+    pub default_place: Option<serde_json::Value>,
+    pub default_price_type: Option<i64>,
+    pub default_user: Option<serde_json::Value>,
+    pub id: i64,
+    pub import_code: Option<String>,
+    pub import_id: Option<String>,
+    pub import_typ: Option<String>,
+    pub modification_date: Option<String>,
+    pub name: Option<String>,
+    pub nip: Option<String>,
+    pub original_credit_limit: Option<f64>,
+    pub ph: Option<serde_json::Value>,
+    pub places: serde_json::Value,
+    pub price_company_group: Option<serde_json::Value>,
+    pub short_name: Option<String>,
+    pub temporary_credit_limit: Option<f64>,
+    pub vat_handling: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct AccountCompanyListResponse {
+    pub data: Vec<AccountCompany>,
+    pub meta: Option<super::ListMeta>,
+}
+
