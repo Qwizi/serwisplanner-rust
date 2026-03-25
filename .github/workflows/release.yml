@@ -44,9 +44,10 @@ jobs:
 
           OLD_VERSION="$(grep '^version' Cargo.toml | head -1 | sed 's/.*"\(.*\)"/\1/')"
           YEAR="$(date -u +%Y)"
-          MONTH="$((10#$(date -u +%m)))"
-          DAY="$((10#$(date -u +%d)))"
-          CALVER_PREFIX="${YEAR}.${MONTH}.${DAY}"
+          MONTH="$(date -u +%m)"
+          DAY="$(date -u +%d)"
+          # SemVer-compatible CalVer: YYYY.MMDD.BUILD (3 segments)
+          CALVER_PREFIX="${YEAR}.${MONTH}${DAY}"
 
           NEXT_BUILD=1
           while read -r TAG_LINE; do
