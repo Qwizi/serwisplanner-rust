@@ -139,7 +139,7 @@ match client.account_company().retrieve(999, None).await {
 Types and resource accessors are auto-generated from the AURA API OpenAPI spec:
 
 ```bash
-curl -o aura-api.yaml https://serwis.stb.tech/manual/api/download/yaml/full
+curl -o aura-api.yaml https://serwis.website.pl/manual/api/download/yaml/full
 python3 codegen.py aura-api.yaml
 cargo build
 ```
